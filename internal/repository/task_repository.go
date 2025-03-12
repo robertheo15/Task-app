@@ -16,7 +16,7 @@ type TaskRepositoryImpl struct {
 	FilePath string
 }
 
-func NewTaskRepository(filepath string) *TaskRepositoryImpl {
+func NewTaskRepository(filepath string) TaskRepository {
 	return &TaskRepositoryImpl{
 		FilePath: filepath,
 	}

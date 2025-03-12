@@ -20,7 +20,7 @@ type TaskServiceImpl struct {
 	repo repository.TaskRepository
 }
 
-func NewTaskRepository(repo repository.TaskRepository) *TaskServiceImpl {
+func NewTaskService(repo repository.TaskRepository) TaskService {
 	return &TaskServiceImpl{repo: repo}
 }
 

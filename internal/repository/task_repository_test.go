@@ -1,8 +1,9 @@
-package repository
+package repository_test
 
 import (
 	"os"
 	"task-app/internal/model"
+	"task-app/internal/repository"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func TestSaveAndLoadTasks(t *testing.T) {
 	tempFile := setupTempFile(t)
 	defer os.Remove(tempFile)
 
-	repo := NewTaskRepository(tempFile)
+	repo := repository.NewTaskRepository(tempFile)
 
 	tasks := []model.Task{
 		{ID: 1, Description: "Test Task", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()},
@@ -38,7 +39,7 @@ func TestSaveAndLoadTasks(t *testing.T) {
 }
 
 func TestLoadTasks_FileNotExist(t *testing.T) {
-	repo := NewTaskRepository("nonexistent.json")
+	repo := repository.NewTaskRepository("nonexistent.json")
 	tasks, err := repo.LoadTasks()
 
 	assert.NoError(t, err)
@@ -52,7 +53,7 @@ func TestLoadTasks_InvalidJSON(t *testing.T) {
 	err := os.WriteFile(tempFile, []byte("invalid json"), 0644)
 	assert.NoError(t, err)
 
-	repo := NewTaskRepository(tempFile)
+	repo := repository.NewTaskRepository(tempFile)
 	_, err = repo.LoadTasks()
 
 	assert.Error(t, err)

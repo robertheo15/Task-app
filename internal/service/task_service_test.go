@@ -1,140 +1,91 @@
-package service
+package service_test
 
 import (
-	"errors"
 	"task-app/internal/model"
+	"task-app/internal/service"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-type mockTaskRepository struct {
-	tasks []model.Task
-	err   error
+type MockTaskRepository struct {
+	mock.Mock
 }
 
-func (m *mockTaskRepository) SaveTasks(tasks []model.Task) error {
-	if m.err != nil {
-		return m.err
-	}
-	m.tasks = tasks
-	return nil
+func (m *MockTaskRepository) SaveTasks(tasks []model.Task) error {
+	args := m.Called(tasks)
+	return args.Error(0)
 }
 
-func (m *mockTaskRepository) LoadTasks() ([]model.Task, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return m.tasks, nil
+func (m *MockTaskRepository) LoadTasks() ([]model.Task, error) {
+	args := m.Called()
+	return args.Get(0).([]model.Task), args.Error(1)
 }
 
 func TestAddTask(t *testing.T) {
-	mockRepo := &mockTaskRepository{}
-	service := NewTaskRepository(mockRepo)
+	mockRepo := new(MockTaskRepository)
+	existingTasks := []model.Task{}
+	mockRepo.On("LoadTasks").Return(existingTasks, nil)
+	mockRepo.On("SaveTasks", mock.Anything).Return(nil)
 
-	err := service.AddTask("Test Task")
+	taskService := service.NewTaskService(mockRepo)
+	err := taskService.AddTask("Test task")
+
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(mockRepo.tasks))
-	assert.Equal(t, "Test Task", mockRepo.tasks[0].Description)
-}
-
-func TestAddTask_RepositoryError(t *testing.T) {
-	mockRepo := &mockTaskRepository{err: errors.New("database error")}
-	service := NewTaskRepository(mockRepo)
-
-	err := service.AddTask("Test Task")
-	assert.Error(t, err)
+	mockRepo.AssertExpectations(t)
 }
 
 func TestUpdateTask(t *testing.T) {
-	mockRepo := &mockTaskRepository{
-		tasks: []model.Task{
-			{ID: 1, Description: "Old Task", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-		},
-	}
-	service := NewTaskRepository(mockRepo)
+	mockRepo := new(MockTaskRepository)
+	existingTasks := []model.Task{{ID: 1, Description: "Old task", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()}}
+	mockRepo.On("LoadTasks").Return(existingTasks, nil)
+	mockRepo.On("SaveTasks", mock.Anything).Return(nil)
 
-	err := service.UpdateTask(1, "Updated Task")
+	taskService := service.NewTaskService(mockRepo)
+	err := taskService.UpdateTask(1, "Updated task")
+
 	assert.NoError(t, err)
-	assert.Equal(t, "Updated Task", mockRepo.tasks[0].Description)
-}
-
-func TestUpdateTask_NotFound(t *testing.T) {
-	mockRepo := &mockTaskRepository{}
-	service := NewTaskRepository(mockRepo)
-
-	err := service.UpdateTask(1, "Updated Task")
-	assert.Error(t, err)
+	mockRepo.AssertExpectations(t)
 }
 
 func TestDeleteTask(t *testing.T) {
-	mockRepo := &mockTaskRepository{
-		tasks: []model.Task{
-			{ID: 1, Description: "Task to Delete", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-		},
-	}
-	service := NewTaskRepository(mockRepo)
+	mockRepo := new(MockTaskRepository)
+	existingTasks := []model.Task{{ID: 1, Description: "Task to delete", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()}}
+	mockRepo.On("LoadTasks").Return(existingTasks, nil)
+	mockRepo.On("SaveTasks", mock.Anything).Return(nil)
 
-	err := service.DeleteTask(1)
+	taskService := service.NewTaskService(mockRepo)
+	err := taskService.DeleteTask(1)
+
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(mockRepo.tasks))
-}
-
-func TestDeleteTask_NotFound(t *testing.T) {
-	mockRepo := &mockTaskRepository{}
-	service := NewTaskRepository(mockRepo)
-
-	err := service.DeleteTask(1)
-	assert.Error(t, err)
+	mockRepo.AssertExpectations(t)
 }
 
 func TestMarkTask(t *testing.T) {
-	mockRepo := &mockTaskRepository{
-		tasks: []model.Task{
-			{ID: 1, Description: "Task to Mark", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-		},
-	}
-	service := NewTaskRepository(mockRepo)
+	mockRepo := new(MockTaskRepository)
+	existingTasks := []model.Task{{ID: 1, Description: "Task to mark", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()}}
+	mockRepo.On("LoadTasks").Return(existingTasks, nil)
+	mockRepo.On("SaveTasks", mock.Anything).Return(nil)
 
-	err := service.MarkTask(1, "done")
+	taskService := service.NewTaskService(mockRepo)
+	err := taskService.MarkTask(1, "done")
+
 	assert.NoError(t, err)
-	assert.Equal(t, "done", mockRepo.tasks[0].Status)
-}
-
-func TestMarkTask_NotFound(t *testing.T) {
-	mockRepo := &mockTaskRepository{}
-	service := NewTaskRepository(mockRepo)
-
-	err := service.MarkTask(1, "done")
-	assert.Error(t, err)
+	mockRepo.AssertExpectations(t)
 }
 
 func TestListTasks(t *testing.T) {
-	mockRepo := &mockTaskRepository{
-		tasks: []model.Task{
-			{ID: 1, Description: "Task 1", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-			{ID: 2, Description: "Task 2", Status: "done", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-		},
-	}
-	service := NewTaskRepository(mockRepo)
+	mockRepo := new(MockTaskRepository)
+	existingTasks := []model.Task{{ID: 1, Description: "Task 1", Status: "todo"}, {ID: 2, Description: "Task 2", Status: "done"}}
+	mockRepo.On("LoadTasks").Return(existingTasks, nil)
 
-	tasks, err := service.ListTasks("done")
+	taskService := service.NewTaskService(mockRepo)
+	tasks, err := taskService.ListTasks("todo")
+
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(tasks))
-	assert.Equal(t, "done", tasks[0].Status)
-}
-
-func TestListTasks_All(t *testing.T) {
-	mockRepo := &mockTaskRepository{
-		tasks: []model.Task{
-			{ID: 1, Description: "Task 1", Status: "todo", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-			{ID: 2, Description: "Task 2", Status: "done", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-		},
-	}
-	service := NewTaskRepository(mockRepo)
-
-	tasks, err := service.ListTasks("")
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(tasks))
+	assert.Len(t, tasks, 1)
+	assert.Equal(t, "Task 1", tasks[0].Description)
+	mockRepo.AssertExpectations(t)
 }

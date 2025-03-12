@@ -12,7 +12,7 @@ const taskFile = "tasks.json"
 
 func main() {
 	repo := repository.NewTaskRepository(taskFile)
-	svc := service.NewTaskRepository(repo)
+	svc := service.NewTaskService(repo)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: task-cli <command> [arguments]")
